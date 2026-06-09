@@ -13,8 +13,8 @@ from . import __version__
 from . import services as _services
 from .agent_auth import AgentKeypair
 from .alpaca import discover_alpaca_servers, normalize_alpaca_address
-from .arcsecond_client import ArcsecondGateway
-from .exceptions import ArcsecondGatewayError, FocaleError
+from .hub_gateway import HubGateway
+from .exceptions import FocaleError, HubGatewayError
 from .hub import HubClient
 from .platesolver import PlateSolverClient
 from .state import AlpacaServerRecord, FocaleState, InstallationRecord
@@ -70,7 +70,7 @@ def _result_line(label: str, ok: bool, detail: str) -> None:
 
 
 def _ensure_installation(
-    gateway: ArcsecondGateway,
+    gateway: HubGateway,
     state: FocaleState,
     keypair: AgentKeypair,
     *,
@@ -89,7 +89,7 @@ def _ensure_installation(
     if existing and existing.public_key_b64 == keypair.public_key_b64:
         return existing
 
-    echo("Enrolling a local Hub agent with Arcsecond.")
+    echo("Enrolling a local Hub agent with Focale.")
     agent_uuid = gateway.enroll_agent(
         public_key_b64=keypair.public_key_b64,
         organisation=organisation,
@@ -106,7 +106,7 @@ def _ensure_installation(
 
 
 def _discover_and_register_alpaca(
-    gateway: ArcsecondGateway,
+    gateway: HubGateway,
     state: FocaleState,
     *,
     organisation: str | None,
@@ -243,7 +243,7 @@ def _load_peaks_file(path: Path) -> list[list[float]]:
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
 @click.option(
     "--api-server",
-    help="Override the Arcsecond API base URL, for example https://api.arcsecond.dev.",
+    help="Override the Focale API base URL, for example https://api.focale.dev.",
 )
 @click.version_option(version=__version__)
 @click.pass_context
@@ -251,33 +251,33 @@ def main(ctx: click.Context, api_server: str | None) -> None:
     ctx.obj = RuntimeOptions(api_server=api_server)
 
 
-@main.command(help="Login to Arcsecond for Focale with password/JWT.")
-@click.option("--username", prompt=True, help="Arcsecond username (without @).")
+@main.command(help="Login to Focale with password/JWT.")
+@click.option("--username", prompt=True, help="Focale username (without @).")
 @pass_options
 def login(options: RuntimeOptions, username: str) -> None:
     try:
         state = FocaleState.load()
-        gateway = ArcsecondGateway(
+        gateway = HubGateway(
             state=state,
             api_server=options.api_server,
         )
-        password = click.prompt("Arcsecond password", hide_input=True)
+        password = click.prompt("Focale password", hide_input=True)
         gateway.login_with_password(username=username, password=password)
-    except ArcsecondGatewayError as exc:
+    except HubGatewayError as exc:
         raise click.ClickException(str(exc)) from exc
 
     click.echo(
-        f"Arcsecond login saved for {gateway.username}. "
+        f"Focale login saved for {gateway.username}. "
         f"API: {gateway.api_server}"
     )
 
 
-@main.command(help="Show the current Focale and Arcsecond session status.")
+@main.command(help="Show the current Focale session status.")
 @pass_options
 def status(options: RuntimeOptions) -> None:
     try:
         state = FocaleState.load()
-        gateway = ArcsecondGateway(
+        gateway = HubGateway(
             state=state,
             api_server=options.api_server,
         )
@@ -285,7 +285,7 @@ def status(options: RuntimeOptions) -> None:
         raise click.ClickException(str(exc)) from exc
 
     click.echo(f"Focale version: {__version__}")
-    click.echo(f"Arcsecond api server: {gateway.api_server}")
+    click.echo(f"Focale api server: {gateway.api_server}")
     click.echo(f"Logged in: {'yes' if gateway.is_logged_in else 'no'}")
     click.echo(f"Username: {gateway.username or '(none)'}")
     click.echo(f"Auth type: {gateway.auth_type or '(none)'}")
@@ -316,7 +316,7 @@ def context() -> None:
 def context_show(options: RuntimeOptions) -> None:
     try:
         state = FocaleState.load()
-        gateway = ArcsecondGateway(
+        gateway = HubGateway(
             state=state,
             api_server=options.api_server,
         )
@@ -332,7 +332,7 @@ def context_show(options: RuntimeOptions) -> None:
 def context_list(options: RuntimeOptions) -> None:
     try:
         state = FocaleState.load()
-        gateway = ArcsecondGateway(
+        gateway = HubGateway(
             state=state,
             api_server=options.api_server,
         )
@@ -363,7 +363,7 @@ def context_use(options: RuntimeOptions, target: str, force: bool) -> None:
 
     try:
         state = FocaleState.load()
-        gateway = ArcsecondGateway(
+        gateway = HubGateway(
             state=state,
             api_server=options.api_server,
         )
@@ -390,8 +390,8 @@ def context_use(options: RuntimeOptions, target: str, force: bool) -> None:
         raise click.ClickException(str(exc)) from exc
 
 
-@main.command(help="Connect to the Arcsecond Hub using the secured challenge flow.")
-@click.option("--hub-url", help="Hub websocket URL, for example wss://hub.arcsecond.io/ws/agent.")
+@main.command(help="Connect to the Focale Hub using the secured challenge flow.")
+@click.option("--hub-url", help="Hub websocket URL, for example wss://hub.focale.space/ws/agent.")
 @click.option(
     "--organisation",
     help="Organisation subdomain override. If omitted, the saved default context is used.",
@@ -408,7 +408,7 @@ def context_use(options: RuntimeOptions, target: str, force: bool) -> None:
 @click.option(
     "--re-enroll",
     is_flag=True,
-    help="Force a fresh Arcsecond agent enrollment before connecting.",
+    help="Force a fresh Focale agent enrollment before connecting.",
 )
 @click.option(
     "--discover-alpaca/--no-discover-alpaca",
@@ -428,7 +428,7 @@ def connect(
 ) -> None:
     try:
         state = FocaleState.load()
-        gateway = ArcsecondGateway(
+        gateway = HubGateway(
             state=state,
             api_server=options.api_server,
         )
@@ -454,7 +454,7 @@ def connect(
                 agent_uuid=record.agent_uuid,
                 organisation=resolved_organisation,
             )
-        except ArcsecondGatewayError as exc:
+        except HubGatewayError as exc:
             username = gateway.require_username()
             scope_type, scope_value = _scope(resolved_organisation, username)
             if exc.status != 403 or re_enroll:
@@ -510,8 +510,8 @@ def connect(
         )
 
 
-@main.command(help="Run a step-by-step diagnostic for Arcsecond auth and Hub connectivity.")
-@click.option("--hub-url", help="Hub websocket URL, for example wss://hub.arcsecond.io/ws/agent.")
+@main.command(help="Run a step-by-step diagnostic for Focale auth and Hub connectivity.")
+@click.option("--hub-url", help="Hub websocket URL, for example wss://hub.focale.space/ws/agent.")
 @click.option(
     "--organisation",
     help="Organisation subdomain override. If omitted, the saved default context is used.",
@@ -547,7 +547,7 @@ def doctor(
     json_output: bool,
 ) -> None:
     state: FocaleState | None = None
-    gateway: ArcsecondGateway | None = None
+    gateway: HubGateway | None = None
     keypair: AgentKeypair | None = None
     record: InstallationRecord | None = None
     resolved_hub_url: str | None = None
@@ -564,7 +564,7 @@ def doctor(
 
     try:
         state = FocaleState.load()
-        gateway = ArcsecondGateway(
+        gateway = HubGateway(
             state=state,
             api_server=options.api_server,
         )
@@ -612,7 +612,7 @@ def doctor(
                 )
             )
             raise SystemExit(1) from exc
-        raise click.ClickException("Doctor failed because no usable Arcsecond login is available.") from exc
+        raise click.ClickException("Doctor failed because no usable Focale login is available.") from exc
 
     try:
         if force_refresh and gateway.auth_type == "token":

@@ -23,8 +23,8 @@ from .alpaca import (
     get_telescope_site_coordinates,
     normalize_alpaca_address,
 )
-from .arcsecond_client import ArcsecondGateway
-from .exceptions import ArcsecondGatewayError, FocaleError
+from .hub_gateway import HubGateway
+from .exceptions import FocaleError, HubGatewayError
 from .hub import HubClient
 from .centering import CenteringLoop
 from .platesolver import PlateSolverClient
@@ -37,13 +37,13 @@ TrafficCallback = Callable[[dict[str, Any]], None]
 ENVIRONMENT_PRESETS: dict[str, dict[str, str]] = {
     "production": {
         "label": branding.DEFAULT_ENVIRONMENT_LABEL,
-        "api_server": "https://api.arcsecond.io",
-        "hub_url": "wss://hub.arcsecond.io/ws/agent",
+        "api_server": "https://api.focale.space",
+        "hub_url": "wss://hub.focale.space/ws/agent",
     },
     "staging": {
         "label": branding.display_name("staging"),
-        "api_server": "https://api.arcsecond.dev",
-        "hub_url": "wss://hub.arcsecond.dev/ws/agent",
+        "api_server": "https://api.focale.dev",
+        "hub_url": "wss://hub.focale.dev/ws/agent",
     },
     "dev": {
         "label": branding.display_name("dev"),
@@ -208,18 +208,18 @@ def _gateway(
     *,
     state: FocaleState,
     api_server: str | None,
-) -> ArcsecondGateway:
+) -> HubGateway:
     if api_server and api_server != state.api_server:
         state.api_server = api_server
         state.save()
-    return ArcsecondGateway(
+    return HubGateway(
         state=state,
         api_server=api_server,
     )
 
 
 def _ensure_installation(
-    gateway: ArcsecondGateway,
+    gateway: HubGateway,
     state: FocaleState,
     keypair: AgentKeypair,
     *,
@@ -238,7 +238,7 @@ def _ensure_installation(
     if existing and existing.public_key_b64 == keypair.public_key_b64:
         return existing
 
-    echo("Enrolling a local Hub agent with Arcsecond.")
+    echo("Enrolling a local Hub agent with Focale.")
     agent_uuid = gateway.enroll_agent(
         public_key_b64=keypair.public_key_b64,
         organisation=organisation,
@@ -255,7 +255,7 @@ def _ensure_installation(
 
 
 def _discover_and_register_alpaca(
-    gateway: ArcsecondGateway,
+    gateway: HubGateway,
     state: FocaleState,
     *,
     organisation: str | None,
@@ -442,7 +442,7 @@ def status(
         if not access_exp or now >= access_exp - 30:
             try:
                 gateway.ensure_authenticated()
-            except ArcsecondGatewayError as exc:
+            except HubGatewayError as exc:
                 auth_error = str(exc)
                 state = FocaleState.load()
                 gateway = _gateway(state=state, api_server=api_server)
@@ -547,7 +547,7 @@ def _coordinates_payload(
 
 def _ensure_remote_server(
     *,
-    gateway: ArcsecondGateway,
+    gateway: HubGateway,
     state: FocaleState,
     server: DiscoveredAlpacaServer,
     existing_by_address: dict[str, dict[str, Any]],
@@ -602,7 +602,7 @@ def _ensure_remote_server(
 
 def _ensure_alpaca_devices(
     *,
-    gateway: ArcsecondGateway,
+    gateway: HubGateway,
     remote_server: dict[str, Any],
     configured_devices: list[ConfiguredAlpacaDevice],
     organisation: str | None,
@@ -610,7 +610,7 @@ def _ensure_alpaca_devices(
 ) -> tuple[list[dict[str, Any]], int, int]:
     remote_server_uuid = str(remote_server.get("uuid") or "").strip()
     if not remote_server_uuid:
-        raise FocaleError("Arcsecond did not return a UUID for the registered Alpaca server.")
+        raise FocaleError("Focale did not return a UUID for the registered Alpaca server.")
 
     remote_devices = gateway.list_alpaca_devices(
         server_uuid=remote_server_uuid,
@@ -647,7 +647,7 @@ def _ensure_alpaca_devices(
 
 def _ensure_observing_site(
     *,
-    gateway: ArcsecondGateway,
+    gateway: HubGateway,
     server: DiscoveredAlpacaServer,
     telescope_device_id: int | None,
     telescope_coordinates: dict[str, Any] | None,
@@ -713,7 +713,7 @@ def _ensure_observing_site(
 
 def _ensure_telescope(
     *,
-    gateway: ArcsecondGateway,
+    gateway: HubGateway,
     server: DiscoveredAlpacaServer,
     site: dict[str, Any],
     telescope_device_id: int | None,
@@ -768,7 +768,7 @@ def _ensure_telescope(
 
 def _ensure_equipment_for_device(
     *,
-    gateway: ArcsecondGateway,
+    gateway: HubGateway,
     device: dict[str, Any],
     configured_device: ConfiguredAlpacaDevice,
     site: dict[str, Any] | None,
@@ -1123,7 +1123,7 @@ def connect_once(
             agent_uuid=record.agent_uuid,
             organisation=resolved_organisation,
         )
-    except ArcsecondGatewayError as exc:
+    except HubGatewayError as exc:
         username = gateway.require_username()
         scope_type, scope_value = _scope(resolved_organisation, username)
         if exc.status != 403 or re_enroll:
@@ -1219,7 +1219,7 @@ def relay_messages(
             agent_uuid=record.agent_uuid,
             organisation=resolved_organisation,
         )
-    except ArcsecondGatewayError as exc:
+    except HubGatewayError as exc:
         username = gateway.require_username()
         scope_type, scope_value = _scope(resolved_organisation, username)
         if exc.status != 403 or re_enroll:
@@ -1294,7 +1294,7 @@ def doctor(
     echo: Logger,
 ) -> dict[str, Any]:
     state: FocaleState | None = None
-    gateway: ArcsecondGateway | None = None
+    gateway: HubGateway | None = None
     keypair: AgentKeypair | None = None
     record: InstallationRecord | None = None
     resolved_hub_url: str | None = None

@@ -40,7 +40,7 @@ jobs:
       - name: Bake staging environment
         shell: pwsh
         run: |
-          Set-Content -Path "src/focale/_environment.py" -Value @"
+          Set-Content -Path "src/focale_local_relay/_environment.py" -Value @"
           # Generated at build time — do not edit.
           ENVIRONMENT = "staging"
           "@
@@ -64,8 +64,8 @@ jobs:
             --collect-submodules arcsecond `
             --collect-submodules astrometry `
             --hidden-import astrometry_extension `
-            --collect-submodules focale `
-            src/focale/gui_main.py
+            --collect-submodules focale_local_relay `
+            src/focale_local_relay/gui_main.py
 
       - name: Install Inno Setup
         id: innosetup
@@ -103,7 +103,7 @@ jobs:
             "/DMyAppName=Focale Staging" `
             "/DMyAppId=5B3A2E10-7C4D-4F9A-B1E8-2D6F0A3C5E71" `
             "/DMyExeName=focale-staging.exe" `
-            "/DMyDefaultDirName={autopf}\Arcsecond\Focale Staging" `
+            "/DMyDefaultDirName={autopf}\FocaleLocalRelay\Focale Staging" `
             "/DMySourceDir=$sourceDir" `
             "/DMyOutputDir=$outputDir" `
             packaging/windows/focale.iss

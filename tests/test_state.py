@@ -2,7 +2,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from focale.state import AlpacaServerRecord, AuthSession, FocaleState, InstallationRecord
+from focale_local_relay.state import AlpacaServerRecord, AuthSession, FocaleState, InstallationRecord
 
 
 def test_state_roundtrip():

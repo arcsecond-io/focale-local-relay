@@ -1,7 +1,7 @@
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
-from focale.agent_auth import AgentKeypair, b64d, signature_payload
+from focale_local_relay.agent_auth import AgentKeypair, b64d, signature_payload
 
 
 def test_keypair_signs_expected_payload():

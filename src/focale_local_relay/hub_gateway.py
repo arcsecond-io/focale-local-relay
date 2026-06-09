@@ -6,7 +6,7 @@ from typing import Any
 
 import httpx
 
-from .exceptions import ArcsecondGatewayError
+from .exceptions import HubGatewayError
 from .state import AuthSession, FocaleState
 
 
@@ -23,9 +23,9 @@ class OrganisationContext:
     role: str | None = None
 
 
-class ArcsecondGateway:
+class HubGateway:
     CLIENT_TYPE = "desktop"
-    DEFAULT_API_SERVER = "https://api.arcsecond.io"
+    DEFAULT_API_SERVER = "https://api.focale.space"
 
     def __init__(
         self,
@@ -36,7 +36,7 @@ class ArcsecondGateway:
         self.state = state
         self.api_server = (api_server or state.api_server or self.DEFAULT_API_SERVER).rstrip("/")
         if not self.api_server:
-            raise ArcsecondGatewayError("Unable to resolve an Arcsecond API server.", 400)
+            raise HubGatewayError("Unable to resolve a Focale API server.", 400)
 
     @property
     def username(self) -> str:
@@ -67,14 +67,14 @@ class ArcsecondGateway:
                 "password": password,
                 "client": self.CLIENT_TYPE,
             },
-            headers={"X-Arcsecond-Client": self.CLIENT_TYPE},
+            headers={"X-Focale-Client": self.CLIENT_TYPE},
             authenticated=False,
         )
         access_token = payload.get("access")
         refresh_token = payload.get("refresh")
         response_username = payload.get("username") or username
         if not access_token or not refresh_token:
-            raise ArcsecondGatewayError("Arcsecond did not return access and refresh tokens.", 500)
+            raise HubGatewayError("Focale did not return access and refresh tokens.", 500)
 
         self.state.auth = AuthSession(
             username=response_username,
@@ -89,13 +89,13 @@ class ArcsecondGateway:
     def refresh_access_token(self) -> None:
         session = self.require_auth_session()
         if session.auth_type != "token" or not session.refresh_token:
-            raise ArcsecondGatewayError("No refreshable JWT session is available.", 401)
+            raise HubGatewayError("No refreshable JWT session is available.", 401)
 
         now = int(time.time())
         if session.refresh_exp and now >= int(session.refresh_exp):
             self._clear_auth_session()
-            raise ArcsecondGatewayError(
-                "Your Arcsecond session expired or was revoked. Sign in again.",
+            raise HubGatewayError(
+                "Your Focale session expired or was revoked. Sign in again.",
                 401,
             )
 
@@ -107,18 +107,18 @@ class ArcsecondGateway:
                 authenticated=False,
                 retry_on_401=False,
             )
-        except ArcsecondGatewayError as exc:
+        except HubGatewayError as exc:
             if exc.status == 401 or self._is_invalid_refresh_error(exc):
                 self._clear_auth_session()
-                raise ArcsecondGatewayError(
-                    "Your Arcsecond session expired or was revoked. Sign in again.",
+                raise HubGatewayError(
+                    "Your Focale session expired or was revoked. Sign in again.",
                     401,
                 ) from exc
             raise
         access_token = payload.get("access")
         refresh_token = payload.get("refresh")
         if not access_token or not refresh_token:
-            raise ArcsecondGatewayError("Arcsecond returned an incomplete refresh response.", 500)
+            raise HubGatewayError("Focale returned an incomplete refresh response.", 500)
 
         self.state.auth = AuthSession(
             username=payload.get("username") or session.username,
@@ -138,7 +138,7 @@ class ArcsecondGateway:
         self.state.save()
 
     @staticmethod
-    def _is_invalid_refresh_error(exc: ArcsecondGatewayError) -> bool:
+    def _is_invalid_refresh_error(exc: HubGatewayError) -> bool:
         message = str(exc)
         return exc.status == 400 and "Invalid or expired refresh token." in message
 
@@ -152,7 +152,7 @@ class ArcsecondGateway:
         response = self._request_dict("post", self._scope_path("agent/enroll", organisation), json=payload)
         agent_uuid = response.get("uuid")
         if not agent_uuid:
-            raise ArcsecondGatewayError("Arcsecond did not return an agent uuid.", 500)
+            raise HubGatewayError("Focale did not return an agent uuid.", 500)
         return agent_uuid
 
     def mint_agent_token(
@@ -168,19 +168,19 @@ class ArcsecondGateway:
         jwt_token = response.get("jwt")
         exp = response.get("exp")
         if not jwt_token or exp is None:
-            raise ArcsecondGatewayError("Arcsecond returned an incomplete Hub token response.", 500)
+            raise HubGatewayError("Focale returned an incomplete Hub token response.", 500)
         return MintedHubToken(jwt=jwt_token, exp=int(exp))
 
     def require_login(self) -> None:
         if not self.is_logged_in:
-            raise ArcsecondGatewayError("No Arcsecond login was found. Run `focale login` first.", 401)
+            raise HubGatewayError("No Focale login was found. Run `focale login` first.", 401)
 
     def require_username(self) -> str:
         self.require_login()
         username = self.username
         if not username:
-            raise ArcsecondGatewayError(
-                "The stored Arcsecond session is missing its username. Login again with `focale login`.",
+            raise HubGatewayError(
+                "The stored Focale session is missing its username. Login again with `focale login`.",
                 400,
             )
         return username
@@ -189,12 +189,12 @@ class ArcsecondGateway:
         if self.state.auth is not None:
             if self.state.auth.auth_type != "token":
                 self._clear_auth_session()
-                raise ArcsecondGatewayError(
+                raise HubGatewayError(
                     "Focale only supports JWT sessions. Sign in again.",
                     401,
                 )
             return self.state.auth
-        raise ArcsecondGatewayError("No Arcsecond credentials are available. Run `focale login` first.", 401)
+        raise HubGatewayError("No Focale credentials are available. Run `focale login` first.", 401)
 
     def ensure_authenticated(self) -> None:
         session = self.require_auth_session()
@@ -208,7 +208,7 @@ class ArcsecondGateway:
         profile = self._request_dict("get", self._scope_path(f"profiles/{self.require_username()}", None))
         memberships = profile.get("memberships") or []
         if not isinstance(memberships, list):
-            raise ArcsecondGatewayError("Unexpected Arcsecond profile memberships payload.", 500)
+            raise HubGatewayError("Unexpected Focale profile memberships payload.", 500)
 
         seen: set[str] = set()
         contexts: list[OrganisationContext] = []
@@ -242,7 +242,7 @@ class ArcsecondGateway:
             params=params,
         )
         if not isinstance(payload, list):
-            raise ArcsecondGatewayError("Unexpected Arcsecond alpacaservers payload.", 500)
+            raise HubGatewayError("Unexpected Focale alpacaservers payload.", 500)
 
         servers: list[dict[str, Any]] = []
         for row in payload:
@@ -290,7 +290,7 @@ class ArcsecondGateway:
             params=params or None,
         )
         if not isinstance(payload, list):
-            raise ArcsecondGatewayError("Unexpected Arcsecond alpacadevices payload.", 500)
+            raise HubGatewayError("Unexpected Focale alpacadevices payload.", 500)
         return [row for row in payload if isinstance(row, dict)]
 
     def create_alpaca_device(
@@ -319,7 +319,7 @@ class ArcsecondGateway:
     def list_observing_sites(self, *, organisation: str | None = None) -> list[dict[str, Any]]:
         payload = self._request("get", self._scope_path("observingsites", organisation))
         if not isinstance(payload, list):
-            raise ArcsecondGatewayError("Unexpected Arcsecond observing sites payload.", 500)
+            raise HubGatewayError("Unexpected Focale observing sites payload.", 500)
         return [row for row in payload if isinstance(row, dict)]
 
     def create_observing_site(
@@ -367,7 +367,7 @@ class ArcsecondGateway:
     def list_telescopes(self, *, organisation: str | None = None) -> list[dict[str, Any]]:
         payload = self._request("get", self._scope_path("telescopes", organisation))
         if not isinstance(payload, list):
-            raise ArcsecondGatewayError("Unexpected Arcsecond telescopes payload.", 500)
+            raise HubGatewayError("Unexpected Focale telescopes payload.", 500)
         return [row for row in payload if isinstance(row, dict)]
 
     def create_telescope(
@@ -414,8 +414,8 @@ class ArcsecondGateway:
     ) -> list[dict[str, Any]]:
         payload = self._request("get", self._scope_path(equipment_path, organisation))
         if not isinstance(payload, list):
-            raise ArcsecondGatewayError(
-                f"Unexpected Arcsecond {equipment_path} payload.",
+            raise HubGatewayError(
+                f"Unexpected Focale {equipment_path} payload.",
                 500,
             )
         return [row for row in payload if isinstance(row, dict)]
@@ -459,7 +459,7 @@ class ArcsecondGateway:
         session = self.require_auth_session()
         if session.auth_type == "token":
             return {"Authorization": f"Bearer {session.access_token}"}
-        return {"X-Arcsecond-API-Authorization": f"Key {session.access_token}"}
+        return {"X-Focale-API-Authorization": f"Key {session.access_token}"}
 
     def _request_dict(
         self,
@@ -482,8 +482,8 @@ class ArcsecondGateway:
             retry_on_401=retry_on_401,
         )
         if not isinstance(payload, dict):
-            raise ArcsecondGatewayError(
-                f"Unexpected Arcsecond response type: {type(payload)!r}.",
+            raise HubGatewayError(
+                f"Unexpected Focale response type: {type(payload)!r}.",
                 500,
             )
         return payload
@@ -515,7 +515,7 @@ class ArcsecondGateway:
                 timeout=30,
             )
         except httpx.RequestError as exc:
-            raise ArcsecondGatewayError(str(exc), 400) from exc
+            raise HubGatewayError(str(exc), 400) from exc
 
         if response.status_code == 401 and authenticated and retry_on_401:
             session = self.require_auth_session()
@@ -532,13 +532,13 @@ class ArcsecondGateway:
                 )
 
         if not (200 <= response.status_code < 300):
-            raise ArcsecondGatewayError(response.text or f"HTTP {response.status_code}", response.status_code)
+            raise HubGatewayError(response.text or f"HTTP {response.status_code}", response.status_code)
 
         try:
             data = response.json() if response.text else {}
         except ValueError as exc:
-            raise ArcsecondGatewayError(
-                f"Arcsecond returned invalid JSON for {path}: {exc}",
+            raise HubGatewayError(
+                f"Focale returned invalid JSON for {path}: {exc}",
                 response.status_code,
             ) from exc
 

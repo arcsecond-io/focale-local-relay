@@ -1,6 +1,6 @@
 from importlib.metadata import PackageNotFoundError
 
-import focale
+import focale_local_relay as focale
 
 
 def test_detect_version_prefers_installed_metadata(monkeypatch) -> None:

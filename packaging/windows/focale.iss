@@ -8,12 +8,12 @@
   #define MyExeName "focale-relay.exe"
 #endif
 #ifndef MyDefaultDirName
-  #define MyDefaultDirName "{autopf}\Arcsecond\Focale Relay"
+  #define MyDefaultDirName "{autopf}\FocaleLocalRelay\Focale Relay"
 #endif
 #ifndef MySetupIconFile
   #define MySetupIconFile ""
 #endif
-#define MyAppPublisher "Arcsecond"
+#define MyAppPublisher "Focale"
 #ifndef MyAppVersion
   #error "MyAppVersion must be provided by the build process."
 #endif

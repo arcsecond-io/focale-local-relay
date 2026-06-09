@@ -13,7 +13,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
 from .exceptions import FocaleStateError
 from .state import _restrict_permissions
 
-PREFIX = b"arcsecond-hub:v1\n"
+PREFIX = b"focale-hub:v1\n"
 
 
 def b64e(data: bytes) -> str:

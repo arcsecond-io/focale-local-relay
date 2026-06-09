@@ -1,6 +1,6 @@
 import json
 
-from focale.alpaca import _parse_discovery_payload, normalize_alpaca_address
+from focale_local_relay.alpaca import _parse_discovery_payload, normalize_alpaca_address
 
 
 def test_normalize_alpaca_address() -> None:

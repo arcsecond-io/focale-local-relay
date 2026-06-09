@@ -6,8 +6,8 @@ class FocaleStateError(FocaleError):
     """Raised when the local Focale state is invalid."""
 
 
-class ArcsecondGatewayError(FocaleError):
-    """Raised when an Arcsecond API request fails."""
+class HubGatewayError(FocaleError):
+    """Raised when a Focale Hub API request fails."""
 
     def __init__(self, message: str, status: int = 400):
         super().__init__(message)

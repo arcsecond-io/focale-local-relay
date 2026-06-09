@@ -85,7 +85,7 @@ class FocaleState:
         if os.name == "nt":
             root = os.environ.get("APPDATA") or os.environ.get("LOCALAPPDATA")
             base = Path(root) if root else home / "AppData" / "Roaming"
-            return base / "Arcsecond" / app_dir
+            return base / "FocaleLocalRelay" / app_dir
         if sys.platform == "darwin":
             return home / "Library" / "Application Support" / app_dir
         xdg_root = os.environ.get("XDG_CONFIG_HOME")

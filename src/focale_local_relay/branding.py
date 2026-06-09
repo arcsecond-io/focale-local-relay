@@ -47,7 +47,7 @@ def window_title(version: str, environment: str = BAKED_ENVIRONMENT) -> str:
 
 def _asset_path(name: str) -> Path:
     if hasattr(sys, "_MEIPASS"):
-        bundled = Path(getattr(sys, "_MEIPASS")) / "focale" / "assets" / name
+        bundled = Path(getattr(sys, "_MEIPASS")) / "focale_local_relay" / "assets" / name
         if bundled.exists():
             return bundled
     return _ASSET_DIR / name

@@ -2,20 +2,20 @@
 
 Focale is a small desktop/CLI bootstrap for Focale users that:
 
-- logs in with the user's Arcsecond account
+- logs in with the user's Focale account
 - creates and stores a local Hub agent identity
-- enrolls that identity with Arcsecond when needed
+- enrolls that identity with Focale when needed
 - mints a short-lived Hub JWT
-- connects to the Arcsecond Hub using the signed Ed25519 challenge flow
+- connects to the Focale Hub using the signed Ed25519 challenge flow
 
-Focale owns its own local state and uses Arcsecond password login to obtain a short-lived bearer JWT plus a refresh token.
+Focale owns its own local state and uses Focale password login to obtain a short-lived bearer JWT plus a refresh token.
 
 ## User install
 
 ### Python / terminal
 
 ```bash
-pip install focale
+pip install focale-local-relay
 ```
 
 Then:
@@ -24,12 +24,12 @@ Then:
 focale login
 focale context list
 focale context use personal
-focale connect --hub-url wss://hub.arcsecond.io/ws/agent
+focale connect --hub-url wss://hub.focale.space/ws/agent
 ```
 
 ### Desktop GUI
 
-`python -m focale` launches the PySide6 desktop app when no CLI arguments are given.
+`python -m focale_local_relay` launches the PySide6 desktop app when no CLI arguments are given.
 The existing `focale` console script remains available for terminal-driven workflows.
 
 ### Windows installer
@@ -52,18 +52,18 @@ focale context show
 focale context list
 focale context use personal
 focale context use my-observatory
-focale doctor --hub-url wss://hub.arcsecond.io/ws/agent
-focale doctor --hub-url wss://hub.arcsecond.io/ws/agent --json
-focale connect --hub-url wss://hub.arcsecond.io/ws/agent
-focale --api-server https://api.arcsecond.dev connect --hub-url wss://hub.arcsecond.dev/ws/agent --once
-focale connect --organisation my-observatory --hub-url wss://hub.arcsecond.io/ws/agent
+focale doctor --hub-url wss://hub.focale.space/ws/agent
+focale doctor --hub-url wss://hub.focale.space/ws/agent --json
+focale connect --hub-url wss://hub.focale.space/ws/agent
+focale --api-server https://api.focale.dev connect --hub-url wss://hub.focale.dev/ws/agent --once
+focale connect --organisation my-observatory --hub-url wss://hub.focale.space/ws/agent
 focale platesolver status
 focale platesolver solve --peaks-file ./peaks.json
 ```
 
 `focale connect` will automatically:
 
-1. refresh the Arcsecond access JWT when needed
+1. refresh the Focale access JWT when needed
 2. create a local Ed25519 keypair if needed
 3. enroll a personal or organisation-scoped agent installation if needed
 4. mint a Hub JWT
@@ -80,7 +80,7 @@ focale context use my-observatory
 
 ## Plate solving
 
-Plate solving is included with `pip install focale` — `arcsecond-astrometry`
+Plate solving is included with `pip install focale-local-relay` — `arcsecond-astrometry`
 is a mandatory dependency and ships native binaries for Windows, macOS, and Linux with no Docker
 or external tooling required.
 

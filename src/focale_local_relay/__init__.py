@@ -13,7 +13,7 @@ def _read_version_from_pyproject() -> str:
 
 def _detect_version() -> str:
     try:
-        return version("focale")
+        return version("focale-local-relay")
     except PackageNotFoundError:
         return _read_version_from_pyproject()
 

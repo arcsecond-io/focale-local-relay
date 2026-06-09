@@ -47,7 +47,7 @@ jobs:
       - name: Bake production environment
         shell: pwsh
         run: |
-          Set-Content -Path "src/focale/_environment.py" -Value @"
+          Set-Content -Path "src/focale_local_relay/_environment.py" -Value @"
           # Generated at build time — do not edit.
           ENVIRONMENT = "production"
           "@
@@ -71,8 +71,8 @@ jobs:
             --collect-submodules arcsecond `
             --collect-submodules astrometry `
             --hidden-import astrometry_extension `
-            --collect-submodules focale `
-            src/focale/gui_main.py
+            --collect-submodules focale_local_relay `
+            src/focale_local_relay/gui_main.py
 
       - name: Install Inno Setup
         id: innosetup
@@ -110,7 +110,7 @@ jobs:
             "/DMyAppName=Focale" `
             "/DMyAppId=11A3125E-D7EA-487D-9998-67E95343F4A5" `
             "/DMyExeName=focale.exe" `
-            "/DMyDefaultDirName={autopf}\Arcsecond\Focale" `
+            "/DMyDefaultDirName={autopf}\FocaleLocalRelay\Focale" `
             "/DMySourceDir=$sourceDir" `
             "/DMyOutputDir=$outputDir" `
             packaging/windows/focale.iss

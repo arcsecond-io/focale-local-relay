@@ -35,7 +35,7 @@ from . import __version__
 from . import branding
 from . import services
 from ._environment import ENVIRONMENT as BAKED_ENVIRONMENT
-from .exceptions import ArcsecondGatewayError, FocaleError
+from .exceptions import FocaleError, HubGatewayError
 
 WorkerFunc = Callable[[Callable[[str], None]], object]
 
@@ -58,7 +58,7 @@ class FunctionWorker(QRunnable):
         try:
             result = self.fn(self.signals.log.emit)
         except Exception as exc:
-            if isinstance(exc, (FocaleError, ArcsecondGatewayError)):
+            if isinstance(exc, (FocaleError, HubGatewayError)):
                 self.signals.error.emit(str(exc))
             else:
                 self.signals.error.emit(traceback.format_exc())

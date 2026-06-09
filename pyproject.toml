@@ -3,14 +3,14 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "focale"
+name = "focale-local-relay"
 version = "0.3.2"
 description = "Focale desktop and Hub bootstrap client"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { file = "LICENSE" }
 authors = [
-  { name = "Cedric Foellmi", email = "cedric@arcsecond.io" },
+  { name = "Cedric Foellmi", email = "cedric@focale.space" },
 ]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -45,15 +45,15 @@ dev = [
 ]
 
 [project.scripts]
-focale = "focale.cli:main"
-focale-gui = "focale.gui:main"
+focale = "focale_local_relay.cli:main"
+focale-gui = "focale_local_relay.gui:main"
 
 [project.urls]
-Homepage = "https://github.com/arcsecond-io/focale"
-Issues = "https://github.com/arcsecond-io/focale/issues"
+Homepage = "https://github.com/arcsecond-io/focale-local-relay"
+Issues = "https://github.com/arcsecond-io/focale-local-relay/issues"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/focale"]
+packages = ["src/focale_local_relay"]

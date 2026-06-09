@@ -1,6 +1,6 @@
 """
 Local implementation of the plate-solving centering loop, ported from the
-arcsecond backend's PlateSolver / center_on_coordinates Celery task.
+Focale backend's PlateSolver / center_on_coordinates Celery task.
 
 All Django / Celery / TaskExecutor dependencies have been replaced with direct
 Alpaca REST calls (via alpaca.py) and the local astrometry solver
@@ -32,7 +32,7 @@ Logger = Callable[[str], None]
 
 
 # ------------------------------------------------------------------ #
-# Peak finding (ported from arcsecond-back _solving.py)              #
+# Peak finding (ported from focale-back _solving.py)                 #
 # ------------------------------------------------------------------ #
 
 def find_peaks_for_centering(
