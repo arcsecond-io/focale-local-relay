@@ -26,6 +26,10 @@ class OrganisationContext:
 class HubGateway:
     CLIENT_TYPE = "desktop"
     DEFAULT_API_SERVER = "https://api.focale.space"
+    # Backoff schedule (seconds) for transient refresh failures — network
+    # errors / 5xx, e.g. while the API is restarting during a deploy. The
+    # session is preserved so a momentary hiccup doesn't surface as an error.
+    REFRESH_RETRY_DELAYS_S = (0.5, 1.0, 2.0)
 
     def __init__(
         self,
@@ -99,22 +103,7 @@ class HubGateway:
                 401,
             )
 
-        try:
-            payload = self._request_dict(
-                "post",
-                "auth/token/refresh",
-                json={"refresh": session.refresh_token},
-                authenticated=False,
-                retry_on_401=False,
-            )
-        except HubGatewayError as exc:
-            if exc.status == 401 or self._is_invalid_refresh_error(exc):
-                self._clear_auth_session()
-                raise HubGatewayError(
-                    "Your Focale session expired or was revoked. Sign in again.",
-                    401,
-                ) from exc
-            raise
+        payload = self._post_refresh_with_retry(session.refresh_token)
         access_token = payload.get("access")
         refresh_token = payload.get("refresh")
         if not access_token or not refresh_token:
@@ -131,6 +120,41 @@ class HubGateway:
         )
         self.state.save()
 
+    def _post_refresh_with_retry(self, refresh_token: str) -> dict[str, Any]:
+        """POST the refresh token, retrying transient failures with backoff.
+
+        Only an explicit rejection (401, or the 400 "Invalid or expired refresh
+        token.") clears the session and surfaces as a re-login prompt. Network
+        errors / 5xx are retried; if they outlast the backoff schedule the
+        original error is re-raised with the session left intact, so a deploy
+        hiccup doesn't fail the operation any harder than necessary.
+        """
+        last_error: HubGatewayError | None = None
+        for attempt in range(len(self.REFRESH_RETRY_DELAYS_S) + 1):
+            try:
+                return self._request_dict(
+                    "post",
+                    "auth/token/refresh",
+                    json={"refresh": refresh_token},
+                    authenticated=False,
+                    retry_on_401=False,
+                )
+            except HubGatewayError as exc:
+                if exc.status == 401 or self._is_invalid_refresh_error(exc):
+                    self._clear_auth_session()
+                    raise HubGatewayError(
+                        "Your Focale session expired or was revoked. Sign in again.",
+                        401,
+                    ) from exc
+                if not self._is_transient_refresh_error(exc):
+                    raise
+                last_error = exc
+                if attempt < len(self.REFRESH_RETRY_DELAYS_S):
+                    time.sleep(self.REFRESH_RETRY_DELAYS_S[attempt])
+
+        assert last_error is not None
+        raise last_error
+
     def _clear_auth_session(self) -> None:
         if self.state.auth is None:
             return
@@ -141,6 +165,12 @@ class HubGateway:
     def _is_invalid_refresh_error(exc: HubGatewayError) -> bool:
         message = str(exc)
         return exc.status == 400 and "Invalid or expired refresh token." in message
+
+    @staticmethod
+    def _is_transient_refresh_error(exc: HubGatewayError) -> bool:
+        # Network failures / timeouts (flagged at the request site) and 5xx are
+        # worth retrying; anything else is a definitive answer from the server.
+        return exc.transient or 500 <= exc.status < 600
 
     def enroll_agent(self, *, public_key_b64: str, organisation: str | None = None) -> str:
         payload = {"public_key_b64": public_key_b64}
@@ -515,7 +545,10 @@ class HubGateway:
                 timeout=30,
             )
         except httpx.RequestError as exc:
-            raise HubGatewayError(str(exc), 400) from exc
+            # Connection refused / timeout / DNS / CORS — no HTTP response was
+            # received. Mark transient so refresh logic can retry instead of
+            # treating it as a hard failure.
+            raise HubGatewayError(str(exc), 400, transient=True) from exc
 
         if response.status_code == 401 and authenticated and retry_on_401:
             session = self.require_auth_session()
