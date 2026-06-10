@@ -18,11 +18,11 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref || github.ref }}
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -59,7 +59,7 @@ jobs:
             --clean `
             --onedir `
             --windowed `
-            --name "focale-staging" `
+            --name "focale-relay-staging" `
             --paths src `
             --collect-submodules arcsecond `
             --collect-submodules astrometry `
@@ -95,21 +95,21 @@ jobs:
       - name: Build installer
         shell: pwsh
         run: |
-          $sourceDir = (Resolve-Path "dist\focale-staging").Path
+          $sourceDir = (Resolve-Path "dist\focale-relay-staging").Path
           $outputDir = Join-Path $PWD "dist\windows"
           New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
           & "${{ steps.innosetup.outputs.path }}" `
             /DMyAppVersion="${{ steps.version.outputs.value }}" `
-            "/DMyAppName=Focale Staging" `
+            "/DMyAppName=Focale Relay Staging" `
             "/DMyAppId=5B3A2E10-7C4D-4F9A-B1E8-2D6F0A3C5E71" `
-            "/DMyExeName=focale-staging.exe" `
-            "/DMyDefaultDirName={autopf}\FocaleLocalRelay\Focale Staging" `
+            "/DMyExeName=focale-relay-staging.exe" `
+            "/DMyDefaultDirName={autopf}\FocaleLocalRelay\Focale Relay Staging" `
             "/DMySourceDir=$sourceDir" `
             "/DMyOutputDir=$outputDir" `
-            packaging/windows/focale.iss
+            packaging/windows/focale-relay.iss
 
       - name: Upload installer artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: focale-staging-windows-${{ steps.version.outputs.value }}
+          name: focale-relay-staging-windows-${{ steps.version.outputs.value }}
           path: dist/windows/*.exe

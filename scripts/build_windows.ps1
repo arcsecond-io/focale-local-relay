@@ -73,10 +73,11 @@ $IsccArgs = @(
     "/DMyAppName=$AppName",
     "/DMyAppId=$AppId",
     "/DMyExeName=$ExeName.exe",
-    "/DMyDefaultDirName=$InstallDir"
+    "/DMyDefaultDirName=$InstallDir",
+    "/DMySourceDir=dist\$ExeName"
 )
 if ($IconPath) {
     $IsccArgs += "/DMySetupIconFile=$IconPath"
 }
-$IsccArgs += "packaging/windows/focale.iss"
+$IsccArgs += "packaging/windows/focale-relay.iss"
 iscc @IsccArgs

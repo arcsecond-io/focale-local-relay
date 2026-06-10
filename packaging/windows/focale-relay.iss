@@ -18,7 +18,7 @@
   #error "MyAppVersion must be provided by the build process."
 #endif
 #ifndef MySourceDir
-  #define MySourceDir "dist\focale"
+  #define MySourceDir "dist\focale-relay"
 #endif
 #ifndef MyOutputDir
   #define MyOutputDir "dist\windows"

@@ -35,12 +35,13 @@ The existing `focale` console script remains available for terminal-driven workf
 ### Windows installer
 
 This repository includes a bootstrap for building a Windows installer from CI. The installer packages
-the PySide6 desktop app as `focale.exe`.
+the PySide6 desktop app as `focale-relay.exe`.
 
 See:
 
-- [`.github/workflows/windows-installer.yml`](.github/workflows/windows-installer.yml)
-- [`packaging/windows/focale.iss`](packaging/windows/focale.iss)
+- [`.github/workflows/windows-production.yml`](.github/workflows/windows-production.yml)
+- [`.github/workflows/windows-staging.yml`](.github/workflows/windows-staging.yml)
+- [`packaging/windows/focale-relay.iss`](packaging/windows/focale-relay.iss)
 - [`scripts/build_windows.ps1`](scripts/build_windows.ps1)
 
 ## Commands
